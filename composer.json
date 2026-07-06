@@ -1,0 +1,46 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "andmarruda/runpod-module-laravel",
+    "description": "Laravel package for RunPod-backed provider operations, cost tracking, logs, webhooks, and reporting.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Andmarruda\\RunpodModule\\": "src/",
+            "Andmarruda\\RunpodModule\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Andmarruda\\RunpodModule\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^11.0|^12.0|^13.0",
+        "illuminate/database": "^11.0|^12.0|^13.0",
+        "illuminate/http": "^11.0|^12.0|^13.0",
+        "illuminate/support": "^11.0|^12.0|^13.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "laravel/pint": "^1.0",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.0|^12.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Andmarruda\\RunpodModule\\RunpodModuleServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "lint": "pint",
+        "lint:check": "pint --test",
+        "test": "phpunit",
+        "stan": "phpstan analyse src --memory-limit=1G"
+    }
+}

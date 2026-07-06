@@ -22,6 +22,5 @@ abstract class TestCase extends Orchestra
             'prefix' => '',
         ]);
         $app['config']->set('runpod-module.driver', 'fake');
-        $app['config']->set('runpod-module.webhooks.image_generated_secret', 'test-secret');
     }
 }

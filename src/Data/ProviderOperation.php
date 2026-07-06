@@ -50,7 +50,6 @@ final class ProviderOperation
     public function recordCost(ProviderCostBreakdown $cost): void
     {
         $this->cost = $cost;
-        $this->status = ProviderJobStatus::CostRecorded;
     }
 
     public function markCancelled(): void

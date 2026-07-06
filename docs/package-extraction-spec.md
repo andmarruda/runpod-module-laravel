@@ -2,72 +2,47 @@
 
 ## Goal
 
-Move RunPod-specific provider operation logic out of Beseenly into a reusable Laravel package. Beseenly must not know RunPod implementation details until the package is published and installed through Composer.
+Move RunPod API access into a reusable Laravel package. Host applications should use `RunpodApi` instead of carrying RunPod HTTP details in product workflow code.
 
 ## Boundaries
 
 The package owns:
 
-- provider operation domain data;
-- dispatching RunPod jobs;
-- reading RunPod job status and result payloads;
-- reading provider logs;
-- estimating and recording provider costs;
-- storing provider operation audit records;
-- receiving signed generated-image webhooks;
-- emitting Laravel events for host applications.
+- RunPod API authentication and HTTP request helpers;
+- generic `GET`, `POST`, `PUT`, `PATCH`, `DELETE` and arbitrary request calls;
+- endpoint-scoped serverless helpers for run, status, logs and cancel;
+- billing endpoint reads;
+- optional local operation audit persistence;
+- optional cost/log recording for reporting.
 
 The host application owns:
 
-- product-specific image generation workflows;
-- posts, brands, design agents, Instagram and WordPress logic;
+- product-specific workflows and payload contracts;
+- callback and webhook routes;
+- callback replay protection and payload interpretation;
 - user/team authorization;
-- any UI or websocket broadcasting;
-- event listeners that continue business workflows after package events.
+- UI, websocket broadcasting and notifications.
 
 ## Architecture
 
-The package follows a hexagonal shape:
+The package follows two layers:
 
-- `Application`: use cases such as dispatch, refresh, log capture, cost recording and cancellation.
-- `Contracts`: ports used by application services.
-- `Data` and `Domain`: framework-light DTOs and status enum.
-- `Infrastructure`: RunPod adapter, fake adapter and Eloquent repository.
-- `Models` and migrations: package-owned persistence for provider audit data.
-- `Events`: public integration points for host applications.
-- `Http`: webhook controller for provider callbacks.
+- `RunpodApi`: public SDK-like RunPod API entry point.
+- Optional audit layer: application services, models and migrations for storing serverless operation history.
+
+Infrastructure classes such as `RunpodApiClient` and `RunpodProviderAdapter` are implementation details unless a host app is extending the package.
 
 ## Public Contract
 
 Host applications should integrate through:
 
-- application use cases such as `DispatchProviderOperation`;
-- contracts such as `ProviderDispatcher`, `ProviderJobReader`, `ProviderLogReader` and `ProviderCostEstimator`;
-- events such as `RunpodImageGenerated`, `RunpodImageFailed` and `ProviderOperationUpdated`;
+- `RunpodApi` for direct RunPod API reads/writes such as billing, serverless endpoints or custom API paths;
+- `RunpodApi::endpoint($endpointId)` for endpoint-scoped run/status/log/cancel helpers;
+- optional operation audit services only when local persistence is needed;
 - config values published from `config/runpod-module.php`.
-
-Host applications should not import `RunpodProviderAdapter` directly unless they are extending or testing the package.
-
-## Webhook Contract
-
-Default route:
-
-```text
-POST /runpod/webhooks/images/generated
-```
-
-Accepted signature headers:
-
-```text
-X-Runpod-Signature: sha256=<hmac-sha256-body>
-X-Beseenly-Signature: sha256=<hmac-sha256-body>
-```
-
-The webhook records provider-reported cost when an operation can be matched by provider job ID, then emits a success or failure event. It does not know how to continue a host-specific design workflow.
 
 ## Non-Goals
 
-- Installing the package into Beseenly before Packagist publication.
-- Owning Beseenly-specific design agent continuation.
-- Owning Instagram or WordPress publishing flows.
+- Owning host-specific callback or webhook routes.
+- Owning product-specific generation, publishing or processing workflows.
 - Owning websocket broadcasting.

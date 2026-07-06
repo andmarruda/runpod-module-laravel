@@ -1,24 +1,59 @@
 # RunPod Module Laravel
 
-Laravel package for RunPod-backed provider operations.
+Laravel SDK-style package for RunPod API access.
 
-## Responsibilities
+## Main API
 
-This package owns RunPod-specific behavior:
+Use `Andmarruda\RunpodModule\RunpodApi` from the Laravel container:
 
-- dispatching RunPod serverless jobs;
-- reading job status/results;
-- capturing provider logs;
-- estimating or recording cost;
-- storing provider operation audit records;
-- receiving signed RunPod image completion webhooks;
-- emitting Laravel events for host applications.
+```php
+use Andmarruda\RunpodModule\RunpodApi;
 
-The host application should not depend on RunPod classes directly. It should listen to package events such as `RunpodImageGenerated` and update its own product models.
+$runpod = app(RunpodApi::class);
+
+$runpod->get('billing');
+$runpod->post('custom/path', ['key' => 'value']);
+$runpod->request('GET', 'custom/search', query: ['page' => 2]);
+```
+
+Endpoint-scoped helpers:
+
+```php
+$endpoint = $runpod->endpoint('endpoint-id');
+
+$endpoint->run(['task' => 'sync'], ['idempotency_key' => 'job-123']);
+$endpoint->status('job-123');
+$endpoint->logs('job-123');
+$endpoint->cancel('job-123');
+```
+
+Billing:
+
+```php
+$runpod->billing();
+$runpod->billing(['from' => '2026-07-01']);
+```
+
+## Optional Audit Layer
+
+The package also includes optional application services and migrations for storing serverless operation history, logs and cost records:
+
+- `DispatchProviderOperation`
+- `RefreshProviderOperation`
+- `CaptureProviderOperationLogs`
+- `RecordProviderOperationCost`
+- `CancelProviderOperation`
+- `ProviderOperationUpdated`
+
+Use this layer only when a host app wants a local audit trail. Direct RunPod API access should go through `RunpodApi`.
+
+## Host-Owned Concerns
+
+The host application owns product workflows, callbacks, authorization, UI updates, notifications and any webhook payload interpretation.
 
 ## Install Later
 
-Do not install into Beseenly until this package is tagged/published.
+Do not install into a host application until this package is tagged/published.
 
 ```bash
 composer require andmarruda/runpod-module-laravel
@@ -27,35 +62,16 @@ php artisan vendor:publish --tag=runpod-module-migrations
 php artisan migrate
 ```
 
-## Events
-
-- `Andmarruda\RunpodModule\Events\ProviderOperationUpdated`
-- `Andmarruda\RunpodModule\Events\RunpodImageGenerated`
-- `Andmarruda\RunpodModule\Events\RunpodImageFailed`
-
-## Webhook
-
-Default route:
-
-```text
-POST /runpod/webhooks/images/generated
-```
-
-Signature header:
-
-```text
-X-Beseenly-Signature: sha256=<hmac-sha256-body>
-```
-
 ## Environment
 
 ```env
 RUNPOD_API_KEY=
 RUNPOD_BASE_URL=https://api.runpod.ai/v2
-RUNPOD_IMAGE_GENERATED_WEBHOOK_SECRET=
-RUNPOD_IMAGE_GENERATED_WEBHOOK_URL=
-RUNPOD_FLUX2_DEV_ENDPOINT_ID=
-RUNPOD_FLUX2_DEV_PRICE_PER_SECOND=
+RUNPOD_DEFAULT_TIMEOUT=900
+RUNPOD_DEFAULT_PRICE_PER_SECOND=
+RUNPOD_DEFAULT_GPU_TYPE=
+RUNPOD_DEFAULT_GPU_COUNT=1
+RUNPOD_BILLING_PATH=billing
 ```
 
 ## Documentation

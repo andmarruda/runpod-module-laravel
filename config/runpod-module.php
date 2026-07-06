@@ -6,21 +6,14 @@ return [
     'api_key' => env('RUNPOD_API_KEY'),
     'timeout' => (int) env('RUNPOD_DEFAULT_TIMEOUT', 900),
     'poll_interval' => (int) env('RUNPOD_DEFAULT_POLL_INTERVAL', 5),
-    'max_asset_bytes' => (int) env('RUNPOD_MAX_ASSET_BYTES', 20000000),
-    'allowed_asset_mime_types' => ['image/png', 'image/jpeg', 'image/webp'],
 
-    'webhooks' => [
-        'image_generated_secret' => env('RUNPOD_IMAGE_GENERATED_WEBHOOK_SECRET'),
-        'image_generated_url' => env('RUNPOD_IMAGE_GENERATED_WEBHOOK_URL'),
-        'route_prefix' => env('RUNPOD_WEBHOOK_ROUTE_PREFIX', 'runpod/webhooks'),
+    'pricing' => [
+        'price_per_second' => env('RUNPOD_DEFAULT_PRICE_PER_SECOND'),
+        'gpu_type' => env('RUNPOD_DEFAULT_GPU_TYPE'),
+        'gpu_count' => (int) env('RUNPOD_DEFAULT_GPU_COUNT', 1),
     ],
 
-    'flux2_dev' => [
-        'endpoint_id' => env('RUNPOD_FLUX2_DEV_ENDPOINT_ID'),
-        'price_per_second' => env('RUNPOD_FLUX2_DEV_PRICE_PER_SECOND'),
-        'gpu_type' => env('RUNPOD_FLUX2_DEV_GPU_TYPE'),
-        'gpu_count' => (int) env('RUNPOD_FLUX2_DEV_GPU_COUNT', 1),
-        'steps' => (int) env('RUNPOD_FLUX2_DEV_STEPS', 28),
-        'guidance' => (float) env('RUNPOD_FLUX2_DEV_GUIDANCE', 3.5),
+    'billing' => [
+        'path' => env('RUNPOD_BILLING_PATH', 'billing'),
     ],
 ];

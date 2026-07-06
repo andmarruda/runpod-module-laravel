@@ -11,7 +11,6 @@ enum ProviderJobStatus: string
     case Failed = 'failed';
     case Cancelled = 'cancelled';
     case TimedOut = 'timed_out';
-    case CostRecorded = 'cost_recorded';
 
     public function isTerminal(): bool
     {

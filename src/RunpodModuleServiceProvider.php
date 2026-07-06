@@ -12,8 +12,8 @@ use Andmarruda\RunpodModule\Contracts\ProviderOperationRepository;
 use Andmarruda\RunpodModule\Infrastructure\EloquentProviderOperationRepository;
 use Andmarruda\RunpodModule\Infrastructure\FakeProviderAdapter;
 use Andmarruda\RunpodModule\Infrastructure\InMemoryProviderOperationRepository;
+use Andmarruda\RunpodModule\Infrastructure\RunpodApiClient;
 use Andmarruda\RunpodModule\Infrastructure\RunpodProviderAdapter;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 final class RunpodModuleServiceProvider extends ServiceProvider
@@ -22,6 +22,8 @@ final class RunpodModuleServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/runpod-module.php', 'runpod-module');
         $this->app->singleton(FakeProviderAdapter::class);
+        $this->app->singleton(RunpodApiClient::class);
+        $this->app->singleton(RunpodApi::class);
         $this->app->singleton(RunpodProviderAdapter::class);
         $repositoryClass = $this->app->environment('testing') ? InMemoryProviderOperationRepository::class : EloquentProviderOperationRepository::class;
         $adapterClass = $this->app->environment('testing') || config('runpod-module.driver') === 'fake' ? FakeProviderAdapter::class : RunpodProviderAdapter::class;
@@ -36,7 +38,6 @@ final class RunpodModuleServiceProvider extends ServiceProvider
         $this->publishes([__DIR__.'/../config/runpod-module.php' => config_path('runpod-module.php')], 'runpod-module-config');
         $this->publishes([__DIR__.'/../database/migrations' => database_path('migrations')], 'runpod-module-migrations');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        Route::prefix((string) config('runpod-module.webhooks.route_prefix', 'runpod/webhooks'))->middleware('api')->group(__DIR__.'/../routes/webhooks.php');
         if ($this->app->runningInConsole()) {
             $this->commands([RunpodRolloutStatus::class]);
         }

@@ -14,13 +14,13 @@ use Andmarruda\RunpodModule\Data\ProviderLogEntry;
 use Andmarruda\RunpodModule\Data\ProviderOperation;
 use Andmarruda\RunpodModule\Data\ProviderResult;
 use Andmarruda\RunpodModule\Domain\ProviderJobStatus;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Http;
 
 final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEstimator, ProviderDispatcher, ProviderJobReader, ProviderLogReader
 {
+    public function __construct(private readonly RunpodApiClient $api) {}
+
     public function dispatch(ProviderDispatchCommand $command): ProviderJob
     {
         $endpointId = $command->service->endpointId;
@@ -29,20 +29,9 @@ final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEsti
             throw new \InvalidArgumentException('RunPod endpoint ID is required.');
         }
 
-        $request = [
-            'input' => $command->input,
-            'policy' => ['idempotency_key' => $command->idempotencyKey],
-        ];
+        $payload = $this->api->runJob($endpointId, $command->input, ['idempotency_key' => $command->idempotencyKey]);
 
-        $webhookUrl = config('runpod-module.webhooks.image_generated_url');
-
-        if (is_string($webhookUrl) && trim($webhookUrl) !== '') {
-            $request['webhook'] = $webhookUrl;
-        }
-
-        $payload = $this->client()->post($endpointId.'/run', $request)->throw()->json();
-
-        return $this->jobFromPayload(is_array($payload) ? $payload : [], (string) Arr::get($payload, 'id', ''));
+        return $this->jobFromPayload($payload, (string) Arr::get($payload, 'id', ''));
     }
 
     public function read(ProviderOperation $operation): ProviderJob
@@ -58,9 +47,9 @@ final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEsti
             );
         }
 
-        $payload = $this->client()->get($operation->service->endpointId.'/status/'.$providerJobId)->throw()->json();
+        $payload = $this->api->getJobStatus((string) $operation->service->endpointId, $providerJobId);
 
-        return $this->jobFromPayload(is_array($payload) ? $payload : [], $providerJobId);
+        return $this->jobFromPayload($payload, $providerJobId);
     }
 
     public function cancel(ProviderOperation $operation): void
@@ -68,7 +57,7 @@ final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEsti
         $providerJobId = $operation->job?->providerJobId;
 
         if ($providerJobId !== null) {
-            $this->client()->post($operation->service->endpointId.'/cancel/'.$providerJobId)->throw();
+            $this->api->cancelJob((string) $operation->service->endpointId, $providerJobId);
         }
     }
 
@@ -80,8 +69,8 @@ final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEsti
             return [];
         }
 
-        $payload = $this->client()->get($operation->service->endpointId.'/logs/'.$providerJobId)->throw()->json();
-        $entries = Arr::get(is_array($payload) ? $payload : [], 'logs', $payload);
+        $payload = $this->api->getJobLogs((string) $operation->service->endpointId, $providerJobId);
+        $entries = Arr::get($payload, 'logs', $payload);
 
         if (! is_array($entries)) {
             return [];
@@ -112,10 +101,10 @@ final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEsti
             );
         }
 
-        $price = (float) config('runpod-module.flux2_dev.price_per_second', 0);
+        $price = (float) config('runpod-module.pricing.price_per_second', 0);
         $executionSeconds = $operation->job?->executionMs !== null ? $operation->job->executionMs / 1000 : null;
         $billableSeconds = $executionSeconds ?? 0.0;
-        $gpuCount = max(1, (int) config('runpod-module.flux2_dev.gpu_count', 1));
+        $gpuCount = max(1, (int) config('runpod-module.pricing.gpu_count', 1));
         $computeCost = $price * $billableSeconds * $gpuCount;
         $formattedCost = number_format($computeCost, 6, '.', '');
         $endpointPrice = number_format($price, 8, '.', '');
@@ -128,7 +117,7 @@ final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEsti
             computeCost: $formattedCost,
             billableSeconds: $billableSeconds,
             executionSeconds: $executionSeconds,
-            gpuType: config('runpod-module.flux2_dev.gpu_type'),
+            gpuType: config('runpod-module.pricing.gpu_type'),
             gpuCount: $gpuCount,
             endpointId: $operation->service->endpointId,
             endpointPricePerSecond: $endpointPrice,
@@ -137,26 +126,11 @@ final class RunpodProviderAdapter implements ProviderCanceller, ProviderCostEsti
                 'deployment' => $operation->service->deployment,
                 'endpoint_id' => $operation->service->endpointId,
                 'price_per_second' => $endpointPrice,
-                'gpu_type' => config('runpod-module.flux2_dev.gpu_type'),
+                'gpu_type' => config('runpod-module.pricing.gpu_type'),
                 'gpu_count' => $gpuCount,
             ],
             rawUsage: is_array($rawUsage) ? $rawUsage : [],
         );
-    }
-
-    private function client(): PendingRequest
-    {
-        $apiKey = config('runpod-module.api_key');
-
-        if (! is_string($apiKey) || trim($apiKey) === '') {
-            throw new \RuntimeException('RUNPOD_API_KEY is required.');
-        }
-
-        return Http::baseUrl(rtrim((string) config('runpod-module.base_url'), '/'))
-            ->withToken($apiKey)
-            ->acceptJson()
-            ->asJson()
-            ->timeout((int) config('runpod-module.timeout', 900));
     }
 
     private function jobFromPayload(array $payload, string $fallbackProviderJobId): ProviderJob

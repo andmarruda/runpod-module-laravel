@@ -20,6 +20,5 @@
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="RUNPOD_MODULE_DRIVER" value="fake"/>
-        <env name="RUNPOD_IMAGE_GENERATED_WEBHOOK_SECRET" value="test-secret"/>
     </php>
 </phpunit>

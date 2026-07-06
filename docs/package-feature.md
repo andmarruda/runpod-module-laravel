@@ -1,31 +1,34 @@
-# Feature - RunPod Provider Operations Package
+# Feature - RunPod API SDK Package
 
 ## Summary
 
-Provide a Laravel package that lets applications run provider-backed jobs through RunPod while keeping detailed audit, logs and cost records. The package is provider-oriented, not image-workflow-oriented, so future services can reuse the same operation lifecycle.
+Provide a Laravel package that centralizes RunPod API access for generic HTTP calls, serverless endpoints, logs and billing. Optional operation persistence exists only for host apps that want a local audit trail.
 
 ## MVP Capabilities
 
-- Dispatch a provider operation with idempotency.
-- Persist operation state, input, output, metadata and provider job IDs.
-- Read RunPod job status and normalize provider statuses.
-- Capture provider logs into package-owned tables.
-- Estimate costs from configured endpoint price when provider usage is incomplete.
-- Record provider-reported cost from webhook payloads.
-- Receive signed generated-image webhook callbacks.
-- Emit framework events for host workflow continuation.
-- Provide a fake adapter for package tests and host development.
+- Resolve a public `RunpodApi` service from the Laravel container.
+- Execute generic RunPod API `GET`, `POST`, `PUT`, `PATCH`, `DELETE` and arbitrary `request()` calls.
+- Scope calls to a serverless endpoint through `RunpodApi::endpoint($endpointId)`.
+- Run serverless jobs.
+- Read job status.
+- Read job logs.
+- Cancel jobs.
+- Read billing responses through `billing()` / `getBilling()`.
+- Optionally persist operation state, input, output, metadata, logs and costs.
+- Provide fake/test adapters for host development and package tests.
 
 ## Package Consumer Experience
 
-After publication, a Laravel app should be able to install with Composer, publish config and migrations, run migrations, configure RunPod env values, then dispatch provider operations through container-resolved application services.
+After publication, a Laravel app should be able to install with Composer, publish config, configure RunPod env values, then call RunPod API paths through `RunpodApi`.
 
-The app should listen to package events to continue product-specific flows, for example a designer agent continuing after a base image is generated.
+If a host app wants local reporting, it can also publish migrations and use the optional operation audit services.
+
+Host apps should implement their own callback or webhook controllers when a workflow needs callbacks, because only the host knows the expected payload shape and business side effects.
 
 ## Success Criteria
 
-- Beseenly can remove direct RunPod implementation code after installing the package.
+- Host applications can remove direct RunPod HTTP implementation code after installing the package.
+- Generic API calls, serverless endpoint helpers and billing reads are available through one public service.
+- Optional audit records are queryable for reporting.
 - Package test suite passes in isolation.
-- Cost records are queryable for partnership and MVP reporting.
-- Webhook payloads do not require Beseenly-specific models.
 - The package can be tagged and submitted to Packagist without requiring app code.

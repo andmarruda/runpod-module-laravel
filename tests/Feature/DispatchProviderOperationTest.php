@@ -40,10 +40,10 @@ final class DispatchProviderOperationTest extends TestCase
         return new ProviderDispatchCommand(
             tenantId: 10,
             userId: 20,
-            service: new ProviderService('image_generation', 'runpod', 'flux-2-dev', 'endpoint-123'),
-            idempotencyKey: 'post-123:image:hero',
-            input: ['prompt' => 'A person looking at a dashboard.'],
-            context: ['post_id' => 'post-123'],
+            service: new ProviderService('serverless_job', 'runpod', 'generic-worker', 'endpoint-123'),
+            idempotencyKey: 'job-123:serverless',
+            input: ['task' => 'health-check'],
+            context: ['workflow_id' => 'workflow-123'],
         );
     }
 }

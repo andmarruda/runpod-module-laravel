@@ -55,6 +55,6 @@ final class FakeProviderAdapter implements ProviderCanceller, ProviderCostEstima
         if (! $current instanceof ProviderJob) {
             return;
         }
-        $this->jobs[$providerJobId] = new ProviderJob($current->provider, $current->providerJobId, ProviderJobStatus::Succeeded, $result ?? ProviderResult::fromArray(['assets' => []]), completedAt: now(), raw: ['adapter' => 'fake', 'completed' => true]);
+        $this->jobs[$providerJobId] = new ProviderJob($current->provider, $current->providerJobId, ProviderJobStatus::Succeeded, $result ?? ProviderResult::fromArray(['output' => []]), completedAt: now(), raw: ['adapter' => 'fake', 'completed' => true]);
     }
 }

@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "andmarruda/runpod-module-laravel",
-    "description": "Laravel package for RunPod-backed provider operations, cost tracking, logs, webhooks, and reporting.",
+    "description": "Laravel SDK for RunPod API access, serverless jobs, billing, logs, and optional operation audit.",
     "type": "library",
     "license": "MIT",
     "autoload": {

@@ -12,7 +12,7 @@ final class RunpodRolloutStatus extends Command
 
     public function handle(): int
     {
-        $this->table(['Setting', 'Value'], [['driver', (string) config('runpod-module.driver')], ['base_url', (string) config('runpod-module.base_url')], ['api_key', config('runpod-module.api_key') ? 'configured' : 'missing'], ['flux2_endpoint', config('runpod-module.flux2_dev.endpoint_id') ? 'configured' : 'missing'], ['webhook_url', config('runpod-module.webhooks.image_generated_url') ? 'configured' : 'missing']]);
+        $this->table(['Setting', 'Value'], [['driver', (string) config('runpod-module.driver')], ['base_url', (string) config('runpod-module.base_url')], ['api_key', config('runpod-module.api_key') ? 'configured' : 'missing'], ['billing_path', (string) config('runpod-module.billing.path', 'billing')]]);
 
         return self::SUCCESS;
     }
